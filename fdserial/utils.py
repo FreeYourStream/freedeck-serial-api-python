@@ -31,10 +31,10 @@ def findFreeDeckDeviceLinux():
         info = execBash(
             "eval $(udevadm info -q property --export -p %s) && echo $ID_VENDOR_ID:$ID_MODEL_ID:$SUBSYSTEM" % devicePath)
         identifier = binaryToString(info)
-        if identifier == "2341:8037:tty":
+        if identifier == "2341:8037:tty" or identifier == "f1f0:4005:tty":
             print("found device on %s" % deviceName)
             return "/dev/%s" % deviceName
-    return "/dev/ttyACM0"
+    raise Exception('no device found')
 
 
 def getFreeDeckPort():
