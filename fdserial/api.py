@@ -1,6 +1,7 @@
 from typing import Iterable
 from fdserial.utils import getFreeDeckPort
 from serial import Serial
+from more_itertools import chunked
 
 # you should wait (number of displays * 30ms) after a page changing command
 # if you want to immediately call the api again to give the freedeck time
@@ -9,6 +10,8 @@ from serial import Serial
 commands = {
     "init": 0x3,
     "getFirmwareVersion": 0x10,
+    "readConfig": 0x20,
+    "writeConfig": 0x21,
     "getCurrentPage": 0x30,
     "setCurrentPage": 0x31,
     "getPageCount": 0x32
@@ -69,3 +72,30 @@ class FreeDeckSerialAPI:
 
     def getPageCount(self):
         return int(self.readWrite([commands['init'], commands['getPageCount']]))
+
+    def readConfig(self, filename):
+        configSizeStr = self.readWrite([commands['init'], commands['readConfig']])
+        configSize = int(configSizeStr)
+
+        configData = self.freedeck.read(configSize)
+
+        with open(filename, "wb") as configFile:
+            configFile.write(configData)
+
+        return configSize
+
+    def writeConfig(self, filename):
+        with open(filename, "rb") as configFile:
+            configData = configFile.read()
+
+        configFileSize = len(configData)
+
+        self.writeOnly([commands['init'],
+                        commands['writeConfig'],
+                        self.intToAsciiVal(configFileSize)])
+        
+        # Every 4KiB of data, the firmware sends back over the number of bytes
+        # received.
+        for chunk in chunked(configData, 4096):
+            self.freedeck.write(chunk)
+            bytes_received = self.freedeck.read_all()

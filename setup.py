@@ -25,7 +25,7 @@ setup(
     ],
     packages=["fdserial"],
     include_package_data=True,
-    install_requires=["pyserial==3.5"],
+    install_requires=["pyserial==3.5", "more-itertools==8.12.0"],
     entry_points={
         "console_scripts": [
             "fdserialtest=fdserial.__main__:main",
