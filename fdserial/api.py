@@ -11,7 +11,11 @@ commands = {
     "getFirmwareVersion": 0x10,
     "getCurrentPage": 0x30,
     "setCurrentPage": 0x31,
-    "getPageCount": 0x32
+    "getPageCount": 0x32,
+    "oledClear": 0x40,
+    "oledPower": 0x41,
+    "oledWriteLine": 0x42,
+    "oledWriteData": 0x43,
 }
 
 
@@ -39,8 +43,12 @@ class FreeDeckSerialAPI:
             if isinstance(bytes, list):
                 for byte in bytes:
                     dataWithNL.append(byte)
+            elif isinstance(bytes, str):
+                for char in bytes:
+                    dataWithNL.append(ord(char))
             else:
                 dataWithNL.append(bytes)
+
             dataWithNL.append(0xa)
         return dataWithNL
 
@@ -61,11 +69,23 @@ class FreeDeckSerialAPI:
         return int(self.readWrite([commands['init'], commands["getCurrentPage"]]))
 
     def setCurrentPage(self, page: int):
+        print(self.pageCount)
         if page > self.pageCount - 1:
             print("OOB")
             return
-        return self.readWrite(
+        return self.writeOnly(
             [commands['init'], commands["setCurrentPage"], self.intToAsciiVal(page)])
 
     def getPageCount(self):
         return int(self.readWrite([commands['init'], commands['getPageCount']]))
+
+    def clearOled(self, display: int = 0xff):
+        return self.writeOnly([commands["init"], commands["oledClear"], display])
+
+    def writeOledLine(self, text: str, font_size: int = 1, row: int = 0, display: int = 0):
+        return self.writeOnly(
+            [commands['init'], commands["oledWriteLine"], display, row, font_size, text])
+
+    def writeOledData(self, display: int = 0, data=[0xff]*1024):
+        return self.writeOnly(
+            [commands['init'], commands["oledWriteData"], display, data])
