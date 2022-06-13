@@ -1,5 +1,6 @@
 #!/bin/python3
 import os
+import serial.tools.list_ports
 
 
 def execBash(command):
@@ -14,8 +15,11 @@ def binaryToString(binary):
 
 
 def findFreeDeckDeviceWin():
-    return "COM14"  # automate this
-
+    ports = serial.tools.list_ports.comports()
+    for port, desc, hwid in sorted(ports):
+        if ("2341:8037" in hwid) or ("f1f0:4005" in hwid):
+            return port
+    raise Exception('no device found')
 
 def findFreeDeckDeviceLinux():
     import subprocess
